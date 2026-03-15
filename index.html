@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>医療機器開発アイデア分析AI</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header>
+  <div class="header-icon">🔬</div>
+  <div>
+    <h1>医療機器開発アイデア分析AI</h1>
+    <p>特許調査・先行研究・採算性・開発ロードマップをAIが総合分析します</p>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- 入力フォーム -->
+  <div class="card">
+    <h2>💡 アイデア概要を入力</h2>
+
+    <label>アイデア名 / タイトル <span class="required">*</span></label>
+    <input type="text" id="ideaTitle" placeholder="例：嚥下障害患者向けスマートカップ、非侵襲的血糖センサー" />
+
+    <label>解決したい医療課題 <span class="required">*</span></label>
+    <textarea id="problem" placeholder="例：高齢者の誤嚥性肺炎リスクを下げるため、嚥下時の液体流量をリアルタイム計測したい"></textarea>
+
+    <label>提案するデバイス・機構の概要</label>
+    <textarea id="device" placeholder="例：カップ内蔵の流量センサーとスマホBluetooth連携で嚥下速度を可視化する機器"></textarea>
+
+    <label>想定ユーザー / 対象患者</label>
+    <input type="text" id="targetUser" placeholder="例：嚥下障害を持つ高齢者、摂食嚥下リハビリ中の患者" />
+
+    <label>使用場面 / 医療現場</label>
+    <input type="text" id="setting" placeholder="例：病院リハビリ室、在宅療養、介護施設" />
+
+    <label>分析してほしい項目（複数選択可）</label>
+    <div class="checkbox-group">
+      <label><input type="checkbox" value="関連特許" checked> 🔖 関連特許</label>
+      <label><input type="checkbox" value="先行研究" checked> 📚 先行研究</label>
+      <label><input type="checkbox" value="採算性" checked> 💴 採算性</label>
+      <label><input type="checkbox" value="開発ロードマップ" checked> 🗺️ 開発ロードマップ</label>
+      <label><input type="checkbox" value="競合製品分析"> 🏭 競合製品分析</label>
+      <label><input type="checkbox" value="規制・薬機法対応"> ⚖️ 規制・薬機法対応</label>
+    </div>
+  </div>
+
+  <button class="btn-primary" id="generateBtn" onclick="generate()">
+    ✨ AIで総合分析する
+  </button>
+
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    Gemini AIが分析中です...
+  </div>
+
+  <div class="error-box" id="errorBox"></div>
+
+  <!-- 結果表示 -->
+  <div class="card" id="result" style="display:none">
+    <h2>🤖 AI 総合分析レポート <span class="badge">Gemini</span></h2>
+    <div class="result-content" id="resultContent"></div>
+    <div class="status-bar" id="statusBar"></div>
+    <button class="copy-btn" id="copyBtn" style="display:none" onclick="copyResult()">📋 結果をコピー</button>
+  </div>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
