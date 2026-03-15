@@ -12,6 +12,8 @@
   --border: #e2e8f0;
   --radius: 14px;
   --danger: #e74c3c;
+  --warn: #e67e22;
+  --warn-light: #fdebd0;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -113,7 +115,6 @@ textarea { resize: vertical; min-height: 90px; }
   transition: background .2s;
 }
 .checkbox-group label:hover { background: #aed6f1; }
-/* TRIZチェックボックスだけ紫系 */
 .checkbox-group label:first-child {
   background: var(--triz-light);
   color: var(--triz);
@@ -172,6 +173,19 @@ textarea { resize: vertical; min-height: 90px; }
   font-size: .9rem;
 }
 
+/* ハルシネーション警告バナー */
+.hallucination-notice {
+  background: var(--warn-light);
+  border: 1.5px solid var(--warn);
+  border-radius: 10px;
+  padding: 12px 16px;
+  color: #7d4e00;
+  font-size: .83rem;
+  margin-bottom: 16px;
+  line-height: 1.7;
+}
+.hallucination-notice strong { color: var(--warn); }
+
 .result-content {
   line-height: 1.9;
   font-size: .95rem;
@@ -188,8 +202,6 @@ textarea { resize: vertical; min-height: 90px; }
   border-radius: 0 6px 6px 0;
 }
 .result-content h3:first-child { margin-top: 0; }
-
-/* TRIZ専用カラー */
 .result-content h3.triz    { border-left-color: var(--triz); background: var(--triz-light); color: var(--triz); }
 .result-content h3.patent   { border-left-color: #8e44ad; background: #f4ecf7; color: #6c3483; }
 .result-content h3.research { border-left-color: #2980b9; background: #d6eaf8; color: #1a5276; }
@@ -197,7 +209,6 @@ textarea { resize: vertical; min-height: 90px; }
 .result-content h3.roadmap  { border-left-color: #e67e22; background: #fdebd0; color: #ca6f1e; }
 .result-content h3.other    { border-left-color: #7f8c8d; background: #f2f3f4; color: #566573; }
 
-/* TRIZステップ強調 */
 .result-content p.triz-step {
   background: var(--triz-light);
   border-left: 3px solid var(--triz);
@@ -206,6 +217,22 @@ textarea { resize: vertical; min-height: 90px; }
   font-weight: 600;
   color: var(--triz);
   margin: 14px 0 6px;
+}
+
+/* 小見出し（A. B. C.）*/
+.result-content p.subsection-head {
+  font-weight: 700;
+  color: var(--primary);
+  margin: 16px 0 6px;
+  font-size: .95rem;
+}
+
+/* 要確認セル */
+.result-content td:has(> span.unverified),
+.result-content td.unverified {
+  background: #fffbf0;
+  color: #996600;
+  font-style: italic;
 }
 
 .result-content p  { margin-bottom: 10px; }

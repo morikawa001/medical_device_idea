@@ -47,12 +47,18 @@
       <label><input type="checkbox" value="規制・薬機法対応"> ⚖️ 規制・薬機法対応</label>
     </div>
 
-    <!-- TRIZ選択時のみ表示される補足入力欄 -->
     <div id="trizField" style="display:none; margin-top:16px; padding:16px; background:#f0e9fb; border-radius:10px; border-left:4px solid #8e44ad;">
       <label style="color:#6c3483; margin-top:0;">🧩 技術的トレードオフ・矛盾（TRIZ分析の精度が上がります）</label>
-      <input type="text" id="contradiction" placeholder="例：精度を上げるとコストが増加、小型化すると電池寿命が短くなる、柔軟性を高めると強度が低下" />
-      <p style="font-size:.8rem; color:#7d3c98; margin-top:8px;">💡 TRIZでは「改善したい特性」と「それによって悪化する特性」のペアを矛盾として定義します</p>
+      <input type="text" id="contradiction" placeholder="例：精度を上げるとコストが増加、小型化すると電池寿命が短くなる" />
+      <p style="font-size:.8rem; color:#7d3c98; margin-top:8px;">💡 「改善したい特性」と「それによって悪化する特性」のペアを入力するとTRIZ分析の精度が上がります</p>
     </div>
+  </div>
+
+  <!-- ハルシネーション警告ノート -->
+  <div class="hallucination-notice">
+    ⚠️ <strong>特許・先行研究について</strong>：特許番号・DOI・PMIDなどの具体的識別情報は、AIが実在を確認できたもののみ表示されます。
+    不確かな情報は「<strong>要確認</strong>」と表示され、代わりに検索データベース・キーワードが提示されます。
+    必ずJ-PlatPat / PubMed等で内容を確認してください。
   </div>
 
   <button class="btn-primary" id="generateBtn" onclick="generate()">

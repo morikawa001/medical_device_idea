@@ -7,13 +7,13 @@ function getCheckedItems() {
 }
 
 async function generate() {
-  const ideaTitle       = document.getElementById('ideaTitle').value.trim();
-  const problem         = document.getElementById('problem').value.trim();
-  const device          = document.getElementById('device').value.trim();
-  const targetUser      = document.getElementById('targetUser').value.trim();
-  const setting         = document.getElementById('setting').value.trim();
-  const contradiction   = document.getElementById('contradiction') ? document.getElementById('contradiction').value.trim() : '';
-  const items           = getCheckedItems();
+  const ideaTitle     = document.getElementById('ideaTitle').value.trim();
+  const problem       = document.getElementById('problem').value.trim();
+  const device        = document.getElementById('device').value.trim();
+  const targetUser    = document.getElementById('targetUser').value.trim();
+  const setting       = document.getElementById('setting').value.trim();
+  const contradiction = document.getElementById('contradiction') ? document.getElementById('contradiction').value.trim() : '';
+  const items         = getCheckedItems();
 
   if (!ideaTitle) { alert('アイデア名を入力してください。'); return; }
   if (!problem)   { alert('解決したい医療課題を入力してください。'); return; }
@@ -42,7 +42,7 @@ async function generate() {
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.4, topP: 0.9, maxOutputTokens: 8192 }
+        generationConfig: { temperature: 0.2, topP: 0.85, maxOutputTokens: 8192 }
       })
     });
     if (!response.ok) {
@@ -73,15 +73,21 @@ async function generate() {
 // ===== プロンプト構築 =====
 function buildPrompt(ideaTitle, problem, device, targetUser, setting, contradiction, items) {
   let p = `あなたは医療機器開発の専門家（医療工学・薬機法・知財・事業化・発明工学）です。
-以下の医療機器開発アイデアについて、指定された項目を詳細に分析してください。
+以下の医療機器開発アイデアについて、指定された項目を分析してください。
+
+❗️ **重要な制約ルール**：
+- 特許番号・著者名・論文名・DOI・PMIDなどの具体的識別情報は「実在すると確信できるもののみ」を記載してください。
+- 存在を確信できない場合は、数字・ID・名前などの具体的情報は一切作成・ハルシネーションしないでください。
+- 「実在する可能性が高い」だけでは不十分です。「実在すると言える」情報のみを出力してください。
+- 不確かな具体的情報は「記載なし」とし、代わりに「検索推奨キーワード」や「調査方法の指宜」を弘めてください。
 
 ## 入力情報
 - アイデア名: ${ideaTitle}
 - 解決したい医療課題: ${problem}
 `;
-  if (device)       p += `- デバイス概要: ${device}\n`;
-  if (targetUser)   p += `- 想定ユーザー: ${targetUser}\n`;
-  if (setting)      p += `- 使用場面: ${setting}\n`;
+  if (device)        p += `- デバイス概要: ${device}\n`;
+  if (targetUser)    p += `- 想定ユーザー: ${targetUser}\n`;
+  if (setting)       p += `- 使用場面: ${setting}\n`;
   if (contradiction) p += `- 技術的トレードオフ・矛盾: ${contradiction}\n`;
 
   p += `\n## 分析項目\n以下の項目をすべて出力してください：\n\n`;
@@ -118,18 +124,58 @@ TRIZの40の発明原理から、この課題に最も適した原理を3〜5個
 
   if (items.includes('関連特許')) {
     p += `### 🔖 1. 関連特許調査
-- 類似する既存特許の概要を3〜5件挙げ、特許番号・出願人・概要を表形式で示してください
-- 本アイデアの特許取得可能性（新規性・進歩性の観点）を評価
-- 参考にすべきIPCコード（国際特許分類）を提示
-- 特許出願時の注意点・差別化すべきクレームポイント\n\n`;
+
+⚠️ **出力ルール（必ず守ってください）**：
+- 特許番号（例：JP2023-XXXXXX、US10XXXXXXX）は「実在すると断言できるもののみ」記載し、
+  不確かな場合は「番号不明」と明記してください。絶対に番号を作成・ハルシネーションしないでください。
+- 出願人・出願人名も同様です。確認できない場合は「不明」と印字してください。
+- 代わりに「実际に検索すべきJ-PlatPat / Google Patentsのキーワード」を必ず提示してください。
+
+以下の内容を出力してください：
+
+**A. 実在する特許情報（確認できたもののみ）**
+| 特許番号 | 出願人 | 概要 | 公開年 |
+|----------|-------|------|--------|
+→ 上記の表に具体的な番号を入れるのは「実在すると确信できる場合のみ」です。不確かな場合は番号欄を「要確認」としてください。
+
+**B. 特許の技術的動向（実在する知識に基づいた記述）**
+- この技術領域で許諾されている主な技術アプローチの小謝
+- 本アイデアの新規性・進歩性の評価（概略）
+- 差別化のために寄与すべきクレーム要素
+
+**C. 推奨検索データベースとキーワード**
+- J-PlatPat（日本語・英語）
+- Google Patents / Espacenet
+- 推奨IPC分類コード：（記載）
+- 推奨検索キーワード：（日本語・英語それぞれ3法以上）\n\n`;
   }
+
   if (items.includes('先行研究')) {
     p += `### 📚 2. 先行研究・エビデンス
-- 関連する先行研究の概要（3〜5件、著者・年・ジャーナル・主な知見）を表形式で
-- 現時点での研究エビデンスレベルの評価
-- 本アイデアが取り組む未解決の研究課題
-- 推奨するPubMed検索キーワード（英語5個）\n\n`;
+
+⚠️ **出力ルール（必ず守ってください）**：
+- 著者名・DOI・PMID・雑誌名の具体的な数字・名前は「確認できるもののみ」記載してください。
+- 「実在する可能性が高い」ではなく、「実在すると言える」もののみ記載し、
+  不確かな場合は該当欄を「要確認」と空欄にしてください。
+- 絶対に存在しない論文情報を作成（ハルシネーション）しないでください。
+
+以下の内容を出力してください：
+
+**A. 実在する論文情報（確認できたもののみ）**
+| 著者 | 発行年 | 雑誌名 | 主な知見 | DOI/PMID |
+|------|--------|--------|---------|----------|
+→ 具体的なDOI・PMIDは「実在を確認できた場合のみ」入力し、不確かな場合は「要確認」と記載してください。
+
+**B. 研究動向の概要（実在する知識に基づくサマリー）**
+- 現時点でのこの技術領域の研究エビデンスレベルの評価
+- 未解決の研究課題（発表済み知識に基づく）
+
+**C. 推奨検索情報**
+- PubMed検索キーワード（英語5個）
+- 医中誌・検索キーワード（日本語3個）
+- Cochrane Library / CINAHLでの推奨フィルター\n\n`;
   }
+
   if (items.includes('採算性')) {
     p += `### 💴 3. 採算性・事業性分析
 - 想定市場規模（国内・海外）の概算
@@ -140,7 +186,6 @@ TRIZの40の発明原理から、この課題に最も適した原理を3〜5個
   }
   if (items.includes('開発ロードマップ')) {
     p += `### 🗺️ 4. 開発ロードマップ案
-以下を表形式で示してください：
 | フェーズ | 期間目安 | 主なタスク | 必要リソース | マイルストーン |
 |---------|---------|-----------|------------|-------------|
 - フェーズ1: 概念実証（POC）
@@ -152,8 +197,8 @@ TRIZの40の発明原理から、この課題に最も適した原理を3〜5個
   }
   if (items.includes('競合製品分析')) {
     p += `### 🏭 5. 競合製品分析
-- 国内外の競合製品・代替品を3〜5件列挙（製品名・企業・特徴・価格帯）
-- 本アイデアの差別化ポイント（競合比較表）\n\n`;
+- 国内外の競傐製品・代替品を3〜5件列挙（製品名・企業・特徴・価格帯）
+- 本アイデアの差別化ポイント（競傐比較表）\n\n`;
   }
   if (items.includes('規制・薬機法対応')) {
     p += `### ⚖️ 6. 規制・薬機法対応
@@ -218,6 +263,9 @@ function markdownToHtml(md) {
     } else if (/^\*\*ステップ\d/.test(line) || /^\*\*Step/.test(line)) {
       flushList();
       html += `<p class="triz-step">${inl(line)}</p>`;
+    } else if (/^\*\*[ABC]\./.test(line)) {
+      flushList();
+      html += `<p class="subsection-head">${inl(line)}</p>`;
     } else if (/^[-*] /.test(line)) {
       inOl = false; listItems.push(inl(line.replace(/^[-*] /, '')));
     } else if (/^\d+\. /.test(line)) {
@@ -255,8 +303,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('ideaTitle').addEventListener('keydown', e => {
     if (e.key === 'Enter') generate();
   });
-
-  // TRIZチェック時に矛盾入力欄を表示
   const trizCheckbox = document.querySelector('.checkbox-group input[value="TRIZ矛盾分析"]');
   const trizField    = document.getElementById('trizField');
   if (trizCheckbox && trizField) {
