@@ -12,13 +12,12 @@
   <div class="header-icon">🔬</div>
   <div>
     <h1>医療機器開発アイデア分析AI</h1>
-    <p>特許調査・先行研究・採算性・開発ロードマップをAIが総合分析します</p>
+    <p>特許調査・先行研究・採算性・開発ロードマップ・<strong>TRIZ発明分析</strong>をAIが総合分析します</p>
   </div>
 </header>
 
 <div class="container">
 
-  <!-- 入力フォーム -->
   <div class="card">
     <h2>💡 アイデア概要を入力</h2>
 
@@ -39,12 +38,20 @@
 
     <label>分析してほしい項目（複数選択可）</label>
     <div class="checkbox-group">
+      <label><input type="checkbox" value="TRIZ矛盾分析"> 🧩 TRIZ発明分析</label>
       <label><input type="checkbox" value="関連特許" checked> 🔖 関連特許</label>
       <label><input type="checkbox" value="先行研究" checked> 📚 先行研究</label>
       <label><input type="checkbox" value="採算性" checked> 💴 採算性</label>
       <label><input type="checkbox" value="開発ロードマップ" checked> 🗺️ 開発ロードマップ</label>
       <label><input type="checkbox" value="競合製品分析"> 🏭 競合製品分析</label>
       <label><input type="checkbox" value="規制・薬機法対応"> ⚖️ 規制・薬機法対応</label>
+    </div>
+
+    <!-- TRIZ選択時のみ表示される補足入力欄 -->
+    <div id="trizField" style="display:none; margin-top:16px; padding:16px; background:#f0e9fb; border-radius:10px; border-left:4px solid #8e44ad;">
+      <label style="color:#6c3483; margin-top:0;">🧩 技術的トレードオフ・矛盾（TRIZ分析の精度が上がります）</label>
+      <input type="text" id="contradiction" placeholder="例：精度を上げるとコストが増加、小型化すると電池寿命が短くなる、柔軟性を高めると強度が低下" />
+      <p style="font-size:.8rem; color:#7d3c98; margin-top:8px;">💡 TRIZでは「改善したい特性」と「それによって悪化する特性」のペアを矛盾として定義します</p>
     </div>
   </div>
 
@@ -59,7 +66,6 @@
 
   <div class="error-box" id="errorBox"></div>
 
-  <!-- 結果表示 -->
   <div class="card" id="result" style="display:none">
     <h2>🤖 AI 総合分析レポート <span class="badge">Gemini</span></h2>
     <div class="result-content" id="resultContent"></div>
