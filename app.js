@@ -299,6 +299,22 @@ function copyResult() {
   });
 }
 
+async function downloadPDF() {
+  const element = document.getElementById('result');
+  const timestamp = new Date().toISOString()
+    .replace(/[:.]/g, '-').slice(0, -5);
+  
+  const opt = {
+    margin: 15,
+    filename: `医療機器アイデア_${timestamp}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+  
+  await html2pdf().set(opt).from(element).save();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('ideaTitle').addEventListener('keydown', e => {
     if (e.key === 'Enter') generate();
