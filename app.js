@@ -25,6 +25,7 @@ async function generate() {
   const resultContent = document.getElementById('resultContent');
   const statusBar     = document.getElementById('statusBar');
   const copyBtn       = document.getElementById('copyBtn');
+  const pdfBtn        = document.getElementById('pdfBtn');
 
   btn.disabled            = true;
   loading.style.display   = 'flex';
@@ -33,6 +34,7 @@ async function generate() {
   resultContent.innerHTML = '';
   statusBar.textContent   = '';
   copyBtn.style.display   = 'none';
+  pdfBtn.style.display    = 'none';
 
   const prompt = buildPrompt(ideaTitle, problem, device, targetUser, setting, contradiction, items);
 
@@ -58,6 +60,7 @@ async function generate() {
     resultContent.innerHTML = markdownToHtml(fullText);
     statusBar.innerHTML     = '<span class="status-done">✅ 分析完了（' + fullText.length + '文字）</span>';
     copyBtn.style.display   = 'inline-block';
+    pdfBtn.style.display    = 'inline-block';
     result.scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (e) {
     loading.style.display  = 'none';
@@ -79,7 +82,7 @@ function buildPrompt(ideaTitle, problem, device, targetUser, setting, contradict
 - 特許番号・著者名・論文名・DOI・PMIDなどの具体的識別情報は「実在すると確信できるもののみ」を記載してください。
 - 存在を確信できない場合は、数字・ID・名前などの具体的情報は一切作成・ハルシネーションしないでください。
 - 「実在する可能性が高い」だけでは不十分です。「実在すると言える」情報のみを出力してください。
-- 不確かな具体的情報は「記載なし」とし、代わりに「検索推奨キーワード」や「調査方法の指宜」を弘めてください。
+- 不確かな具体的情報は「記載なし」とし、代わりに「検索推奨キーワード」や「調査方法の指示」を示してください。
 
 ## 入力情報
 - アイデア名: ${ideaTitle}
@@ -129,17 +132,17 @@ TRIZの40の発明原理から、この課題に最も適した原理を3〜5個
 - 特許番号（例：JP2023-XXXXXX、US10XXXXXXX）は「実在すると断言できるもののみ」記載し、
   不確かな場合は「番号不明」と明記してください。絶対に番号を作成・ハルシネーションしないでください。
 - 出願人・出願人名も同様です。確認できない場合は「不明」と印字してください。
-- 代わりに「実际に検索すべきJ-PlatPat / Google Patentsのキーワード」を必ず提示してください。
+- 代わりに「実際に検索すべきJ-PlatPat / Google Patentsのキーワード」を必ず提示してください。
 
 以下の内容を出力してください：
 
 **A. 実在する特許情報（確認できたもののみ）**
 | 特許番号 | 出願人 | 概要 | 公開年 |
 |----------|-------|------|--------|
-→ 上記の表に具体的な番号を入れるのは「実在すると确信できる場合のみ」です。不確かな場合は番号欄を「要確認」としてください。
+→ 上記の表に具体的な番号を入れるのは「実在すると確信できる場合のみ」です。不確かな場合は番号欄を「要確認」としてください。
 
 **B. 特許の技術的動向（実在する知識に基づいた記述）**
-- この技術領域で許諾されている主な技術アプローチの小謝
+- この技術領域で許諾されている主な技術アプローチの概要
 - 本アイデアの新規性・進歩性の評価（概略）
 - 差別化のために寄与すべきクレーム要素
 
@@ -147,7 +150,7 @@ TRIZの40の発明原理から、この課題に最も適した原理を3〜5個
 - J-PlatPat（日本語・英語）
 - Google Patents / Espacenet
 - 推奨IPC分類コード：（記載）
-- 推奨検索キーワード：（日本語・英語それぞれ3法以上）\n\n`;
+- 推奨検索キーワード：（日本語・英語それぞれ3語以上）\n\n`;
   }
 
   if (items.includes('先行研究')) {
@@ -197,8 +200,8 @@ TRIZの40の発明原理から、この課題に最も適した原理を3〜5個
   }
   if (items.includes('競合製品分析')) {
     p += `### 🏭 5. 競合製品分析
-- 国内外の競傐製品・代替品を3〜5件列挙（製品名・企業・特徴・価格帯）
-- 本アイデアの差別化ポイント（競傐比較表）\n\n`;
+- 国内外の競合製品・代替品を3〜5件列挙（製品名・企業・特徴・価格帯）
+- 本アイデアの差別化ポイント（競合比較表）\n\n`;
   }
   if (items.includes('規制・薬機法対応')) {
     p += `### ⚖️ 6. 規制・薬機法対応
@@ -295,24 +298,63 @@ function copyResult() {
   navigator.clipboard.writeText(text).then(() => {
     const b = document.getElementById('copyBtn');
     b.textContent = '✅ コピーしました！';
-    setTimeout(() => { b.textContent = '📋 結果をコピー'; }, 2000);
+    setTimeout(() => { b.textContent = '📋 コピー'; }, 2000);
+  }).catch(() => {
+    alert('コピーに失敗しました。ブラウザの設定を確認してください。');
   });
 }
 
 async function downloadPDF() {
+  const pdfBtn = document.getElementById('pdfBtn');
   const element = document.getElementById('result');
-  const timestamp = new Date().toISOString()
-    .replace(/[:.]/g, '-').slice(0, -5);
-  
+
+  // html2pdf ライブラリの存在確認
+  if (typeof html2pdf === 'undefined') {
+    alert('PDFライブラリの読み込みに失敗しました。ページを再読み込みしてください。');
+    return;
+  }
+
+  pdfBtn.textContent = '⏳ PDF生成中...';
+  pdfBtn.disabled = true;
+
+  // PDFに含めるボタン類を一時的に非表示
+  const copyBtn = document.getElementById('copyBtn');
+  const statusBar = document.getElementById('statusBar');
+  copyBtn.style.display = 'none';
+  pdfBtn.style.display = 'none';
+
+  const now = new Date();
+  const timestamp = now.getFullYear() + '-'
+    + String(now.getMonth() + 1).padStart(2, '0') + '-'
+    + String(now.getDate()).padStart(2, '0') + '_'
+    + String(now.getHours()).padStart(2, '0')
+    + String(now.getMinutes()).padStart(2, '0');
+
   const opt = {
-    margin: 15,
-    filename: `医療機器アイデア_${timestamp}.pdf`,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    margin: [10, 10, 10, 10],
+    filename: `医療機器アイデア分析_${timestamp}.pdf`,
+    image: { type: 'jpeg', quality: 0.95 },
+    html2canvas: {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      letterRendering: true
+    },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
   };
-  
-  await html2pdf().set(opt).from(element).save();
+
+  try {
+    await html2pdf().set(opt).from(element).save();
+  } catch (e) {
+    alert('PDF生成中にエラーが発生しました: ' + e.message);
+  } finally {
+    // ボタンを再表示・テキスト復元
+    copyBtn.style.display = 'inline-block';
+    pdfBtn.style.display = 'inline-block';
+    pdfBtn.textContent = '📄 PDFダウンロード';
+    pdfBtn.disabled = false;
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {

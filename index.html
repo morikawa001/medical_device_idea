@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>医療機器開発アイデア分析AI</title>
   <link rel="stylesheet" href="style.css" />
+  <!-- html2pdf.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
 
@@ -76,12 +78,14 @@
     <h2>🤖 AI 総合分析レポート <span class="badge">Gemini</span></h2>
     <div class="result-content" id="resultContent"></div>
     <div class="status-bar" id="statusBar"></div>
-   <button onclick="copyToClipboard()" class="copy-btn">
-  📋 コピー
-   </button>
-    <button onclick="downloadPDF()" class="copy-btn" style="margin-left: 8px;">
-  📄 PDFダウンロード
-    </button>
+    <div style="margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap;">
+      <button id="copyBtn" onclick="copyResult()" class="copy-btn" style="display:none;">
+        📋 コピー
+      </button>
+      <button id="pdfBtn" onclick="downloadPDF()" class="copy-btn" style="display:none;">
+        📄 PDFダウンロード
+      </button>
+    </div>
   </div>
 </div>
 
