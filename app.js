@@ -7,14 +7,14 @@ function getCheckedItems() {
 }
 
 async function generate() {
-  const ideaTitle     = document.getElementById('ideaTitle').value.trim();
-  const problem       = document.getElementById('problem').value.trim();
-  const device        = document.getElementById('device').value.trim();
-  const targetUser    = document.getElementById('targetUser').value.trim();
-  const setting       = document.getElementById('setting').value.trim();
+  const ideaTitle       = document.getElementById('ideaTitle').value.trim();
+  const problem         = document.getElementById('problem').value.trim();
+  const device          = document.getElementById('device').value.trim();
+  const targetUser      = document.getElementById('targetUser').value.trim();
+  const setting         = document.getElementById('setting').value.trim();
   const contradictionEl = document.getElementById('contradiction');
-  const contradiction = contradictionEl ? contradictionEl.value.trim() : '';
-  const items         = getCheckedItems();
+  const contradiction   = contradictionEl ? contradictionEl.value.trim() : '';
+  const items           = getCheckedItems();
 
   if (!ideaTitle) { alert('アイデア名を入力してください。'); return; }
   if (!problem)   { alert('解決したい医療課題を入力してください。'); return; }
@@ -137,7 +137,6 @@ TRIZの40の発明原理から、この課題に最も適した原理を3〜5個
 **A. 実在する特許情報（確認できたもののみ）**
 | 特許番号 | 出願人 | 概要 | 公開年 |
 |----------|-------|------|--------|
-→ 上記の表に具体的な番号を入れるのは「実在すると確信できる場合のみ」です。不確かな場合は番号欄を「要確認」としてください。
 
 **B. 特許の技術的動向（実在する知識に基づいた記述）**
 - この技術領域で許諾されている主な技術アプローチの概要
@@ -156,8 +155,7 @@ TRIZの40の発明原理から、この課題に最も適した原理を3〜5個
 
 ⚠️ **出力ルール（必ず守ってください）**：
 - 著者名・DOI・PMID・雑誌名の具体的な数字・名前は「確認できるもののみ」記載してください。
-- 「実在する可能性が高い」ではなく、「実在すると言える」もののみ記載し、
-  不確かな場合は該当欄を「要確認」としてください。
+- 「実在する可能性が高い」ではなく、「実在すると言える」もののみ記載し、不確かな場合は「要確認」としてください。
 - 絶対に存在しない論文情報を作成（ハルシネーション）しないでください。
 
 以下の内容を出力してください：
@@ -165,7 +163,6 @@ TRIZの40の発明原理から、この課題に最も適した原理を3〜5個
 **A. 実在する論文情報（確認できたもののみ）**
 | 著者 | 発行年 | 雑誌名 | 主な知見 | DOI/PMID |
 |------|--------|--------|---------|----------|
-→ 具体的なDOI・PMIDは「実在を確認できた場合のみ」入力し、不確かな場合は「要確認」と記載してください。
 
 **B. 研究動向の概要（実在する知識に基づくサマリー）**
 - 現時点でのこの技術領域の研究エビデンスレベルの評価
@@ -233,55 +230,91 @@ function markdownToHtml(md) {
   function flushList() {
     if (!listItems.length) return;
     const tag = inOl ? 'ol' : 'ul';
-    html += `<${tag}>` + listItems.map(i => `<li>${i}</li>`).join('') + `</${tag}>`;
+    html += '<' + tag + '>' + listItems.map(function(i){ return '<li>' + i + '</li>'; }).join('') + '</' + tag + '>';
     listItems = []; inOl = false;
+  }
+
+  // セルテキストのエスケープ（タグ内容のみ、HTMLタグ自体は生のまま）
+  function escapeCell(text) {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/`(.+?)`/g, '<code>$1</code>');
   }
 
   function flushTable() {
     if (!tableRows.length) return;
-    let t = '<table><thead>';
-    let bodyStarted = false;
-    tableRows.forEach((row) => {
-      if (/^\|[-:\s|]+\|$/.test(row.trim())) {
-        t += '</thead><tbody>'; bodyStarted = true; return;
+    let t = '<table>';
+    let headerDone = false;
+    let bodyOpen   = false;
+    tableRows.forEach(function(row) {
+      var trimmed = row.trim();
+      // 区切り行（|---|---|）はスキップ
+      if (/^\|[-:\s|]+\|$/.test(trimmed)) {
+        if (!bodyOpen) {
+          t += '<tbody>';
+          bodyOpen = true;
+        }
+        return;
       }
-      const cells = row.trim().split('|').filter((_, ci, arr) => ci > 0 && ci < arr.length - 1).map(c => c.trim());
-      if (!bodyStarted) {
-        t += '<tr>' + cells.map(c => `<th>${inl(c)}</th>`).join('') + '</tr>';
+      // セル分割
+      var cells = trimmed.split('|').filter(function(_, ci, arr) {
+        return ci > 0 && ci < arr.length - 1;
+      }).map(function(c){ return c.trim(); });
+
+      if (!headerDone) {
+        // 最初の行を <thead> に
+        t += '<thead><tr>' + cells.map(function(c){ return '<th>' + escapeCell(c) + '</th>'; }).join('') + '</tr></thead>';
+        headerDone = true;
       } else {
-        t += '<tr>' + cells.map(c => `<td>${inl(c)}</td>`).join('') + '</tr>';
+        t += '<tr>' + cells.map(function(c){ return '<td>' + escapeCell(c) + '</td>'; }).join('') + '</tr>';
       }
     });
-    if (bodyStarted) t += '</tbody>'; else t += '</thead>';
+    if (bodyOpen) t += '</tbody>';
     t += '</table>';
-    html += t; tableRows = [];
+    html += t;
+    tableRows = [];
   }
 
-  lines.forEach(line => {
-    if (line.trim().startsWith('|')) { flushList(); tableRows.push(line); return; }
+  lines.forEach(function(line) {
+    // テーブル行はまずバッファに追加
+    if (line.trim().startsWith('|')) {
+      flushList();
+      tableRows.push(line);
+      return;
+    }
+    // テーブル行でなくなったらフラッシュ
     if (tableRows.length) flushTable();
+
     if (/^#{1,3} /.test(line)) {
       flushList();
-      const text = line.replace(/^#+\s+/, '');
-      html += `<h3 class="${headingClass(text)}">${inl(text)}</h3>`;
+      var text = line.replace(/^#+\s+/, '');
+      html += '<h3 class="' + headingClass(text) + '">' + escapeCell(text) + '</h3>';
     } else if (/^\*\*ステップ\d/.test(line) || /^\*\*Step/.test(line)) {
       flushList();
-      html += `<p class="triz-step">${inl(line)}</p>`;
+      html += '<p class="triz-step">' + escapeCell(line) + '</p>';
     } else if (/^\*\*[ABC]\./.test(line)) {
       flushList();
-      html += `<p class="subsection-head">${inl(line)}</p>`;
+      html += '<p class="subsection-head">' + escapeCell(line) + '</p>';
     } else if (/^[-*] /.test(line)) {
-      inOl = false; listItems.push(inl(line.replace(/^[-*] /, '')));
+      inOl = false;
+      listItems.push(escapeCell(line.replace(/^[-*] /, '')));
     } else if (/^\d+\. /.test(line)) {
-      inOl = true; listItems.push(inl(line.replace(/^\d+\. /, '')));
+      inOl = true;
+      listItems.push(escapeCell(line.replace(/^\d+\. /, '')));
     } else if (line.trim() === '') {
       flushList();
     } else {
       flushList();
-      html += `<p>${inl(line)}</p>`;
+      html += '<p>' + escapeCell(line) + '</p>';
     }
   });
-  flushList(); flushTable();
+  flushList();
+  flushTable();
   return html;
 }
 
@@ -295,22 +328,22 @@ function inl(t) {
 }
 
 function copyResult() {
-  const text = document.getElementById('resultContent').innerText;
-  navigator.clipboard.writeText(text).then(() => {
-    const b = document.getElementById('copyBtn');
+  var text = document.getElementById('resultContent').innerText;
+  navigator.clipboard.writeText(text).then(function() {
+    var b = document.getElementById('copyBtn');
     b.textContent = '✅ コピーしました！';
-    setTimeout(() => { b.textContent = '📋 結果をコピー'; }, 2000);
+    setTimeout(function(){ b.textContent = '📋 結果をコピー'; }, 2000);
   });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('ideaTitle').addEventListener('keydown', e => {
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('ideaTitle').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') generate();
   });
-  const trizCheckbox = document.querySelector('.checkbox-group input[value="TRIZ矛盾分析"]');
-  const trizField    = document.getElementById('trizField');
+  var trizCheckbox = document.querySelector('.checkbox-group input[value="TRIZ矛盾分析"]');
+  var trizField    = document.getElementById('trizField');
   if (trizCheckbox && trizField) {
-    trizCheckbox.addEventListener('change', () => {
+    trizCheckbox.addEventListener('change', function() {
       trizField.style.display = trizCheckbox.checked ? 'block' : 'none';
     });
   }
