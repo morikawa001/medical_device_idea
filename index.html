@@ -76,9 +76,13 @@
     <h2>🤖 AI 総合分析レポート <span class="badge">Gemini</span></h2>
     <div class="result-content" id="resultContent"></div>
     <div class="status-bar" id="statusBar"></div>
-    <button class="copy-btn" id="copyBtn" style="display:none" onclick="copyResult()">📋 結果をコピー</button>
+   <button onclick="copyToClipboard()" class="copy-btn">
+  📋 コピー
+   </button>
+    <button onclick="downloadPDF()" class="copy-btn" style="margin-left: 8px;">
+  📄 PDFダウンロード
+    </button>
   </div>
-
 </div>
 
 <script src="app.js"></script>
