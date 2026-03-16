@@ -54,6 +54,13 @@ async function generate() {
     const fullText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!fullText) throw new Error('レスポンスが空です。GASのデプロイ設定を確認してください。');
 
+    // デバッグ：Geminiが返したテキストの先頭部分をコンソールに出力
+    const trizSection = fullText.match(/\| 原理番号[\s\S]*?\n\n/);
+    console.log('=== TRIZ TABLE RAW ===');
+    console.log(trizSection ? trizSection[0] : 'TRIZ表が見つかりません');
+    console.log('=== FULL TEXT (first 2000 chars) ===');
+    console.log(fullText.substring(0, 2000));
+
     loading.style.display   = 'none';
     result.style.display    = 'block';
     resultContent.innerHTML = markdownToHtml(fullText);
@@ -230,11 +237,10 @@ function markdownToHtml(md) {
   function flushList() {
     if (!listItems.length) return;
     const tag = inOl ? 'ol' : 'ul';
-    html += '<' + tag + '>' + listItems.map(function(i){ return '<li>' + i + '</li>'; }).join('') + '</' + tag + '>';
+    html += '<' + tag + '>' + listItems.map(i => '<li>' + i + '</li>').join('') + '</' + tag + '>';
     listItems = []; inOl = false;
   }
 
-  // セルテキストのエスケープ（タグ内容のみ、HTMLタグ自体は生のまま）
   function escapeCell(text) {
     return text
       .replace(/&/g, '&amp;')
@@ -248,51 +254,52 @@ function markdownToHtml(md) {
 
   function flushTable() {
     if (!tableRows.length) return;
+
+    // デバッグ: テーブル行をコンソールに出力
+    console.log('=== flushTable called, rows:', tableRows.length);
+    tableRows.forEach((r, i) => console.log('row[' + i + ']:', JSON.stringify(r)));
+
     let t = '<table>';
     let headerDone = false;
     let bodyOpen   = false;
+
     tableRows.forEach(function(row) {
-      var trimmed = row.trim();
-      // 区切り行（|---|---|）はスキップ
-      if (/^\|[-:\s|]+\|$/.test(trimmed)) {
-        if (!bodyOpen) {
-          t += '<tbody>';
-          bodyOpen = true;
-        }
+      const trimmed = row.trim();
+      // 区切り行はスキップ
+      if (/^\|[\s\-:\|]+\|$/.test(trimmed)) {
+        if (!bodyOpen) { t += '<tbody>'; bodyOpen = true; }
         return;
       }
-      // セル分割
-      var cells = trimmed.split('|').filter(function(_, ci, arr) {
-        return ci > 0 && ci < arr.length - 1;
-      }).map(function(c){ return c.trim(); });
+      // セル分割: 先頭・末尾の空セルを除去
+      const cells = trimmed.split('|').slice(1, -1).map(c => c.trim());
+      console.log('cells:', cells);
 
       if (!headerDone) {
-        // 最初の行を <thead> に
-        t += '<thead><tr>' + cells.map(function(c){ return '<th>' + escapeCell(c) + '</th>'; }).join('') + '</tr></thead>';
+        t += '<thead><tr>' + cells.map(c => '<th>' + escapeCell(c) + '</th>').join('') + '</tr></thead>';
         headerDone = true;
       } else {
-        t += '<tr>' + cells.map(function(c){ return '<td>' + escapeCell(c) + '</td>'; }).join('') + '</tr>';
+        if (!bodyOpen) { t += '<tbody>'; bodyOpen = true; }
+        t += '<tr>' + cells.map(c => '<td>' + escapeCell(c) + '</td>').join('') + '</tr>';
       }
     });
+
     if (bodyOpen) t += '</tbody>';
     t += '</table>';
     html += t;
     tableRows = [];
   }
 
-  lines.forEach(function(line) {
-    // テーブル行はまずバッファに追加
+  lines.forEach(line => {
     if (line.trim().startsWith('|')) {
       flushList();
       tableRows.push(line);
       return;
     }
-    // テーブル行でなくなったらフラッシュ
     if (tableRows.length) flushTable();
 
     if (/^#{1,3} /.test(line)) {
       flushList();
-      var text = line.replace(/^#+\s+/, '');
+      const text = line.replace(/^#+\s+/, '');
       html += '<h3 class="' + headingClass(text) + '">' + escapeCell(text) + '</h3>';
     } else if (/^\*\*ステップ\d/.test(line) || /^\*\*Step/.test(line)) {
       flushList();
@@ -328,22 +335,22 @@ function inl(t) {
 }
 
 function copyResult() {
-  var text = document.getElementById('resultContent').innerText;
-  navigator.clipboard.writeText(text).then(function() {
-    var b = document.getElementById('copyBtn');
+  const text = document.getElementById('resultContent').innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    const b = document.getElementById('copyBtn');
     b.textContent = '✅ コピーしました！';
-    setTimeout(function(){ b.textContent = '📋 結果をコピー'; }, 2000);
+    setTimeout(() => { b.textContent = '📋 結果をコピー'; }, 2000);
   });
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-  document.getElementById('ideaTitle').addEventListener('keydown', function(e) {
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('ideaTitle').addEventListener('keydown', e => {
     if (e.key === 'Enter') generate();
   });
-  var trizCheckbox = document.querySelector('.checkbox-group input[value="TRIZ矛盾分析"]');
-  var trizField    = document.getElementById('trizField');
+  const trizCheckbox = document.querySelector('.checkbox-group input[value="TRIZ矛盾分析"]');
+  const trizField    = document.getElementById('trizField');
   if (trizCheckbox && trizField) {
-    trizCheckbox.addEventListener('change', function() {
+    trizCheckbox.addEventListener('change', () => {
       trizField.style.display = trizCheckbox.checked ? 'block' : 'none';
     });
   }
